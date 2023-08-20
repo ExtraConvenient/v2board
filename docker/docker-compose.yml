@@ -1,0 +1,60 @@
+name: v2board
+services:
+    nginx:
+        image: v2board-nginx
+        build:
+            context: .
+            dockerfile: Nginx-Dockerfile
+        ports:
+            - 8080:80
+        volumes:
+            - ..:/app
+        depends_on:
+            - app
+            - queue
+            - schedule
+    app:
+        image: v2board-php
+        build: 
+            context: .
+            dockerfile: PHP-Dockerfile
+        volumes:
+            - ..:/app
+        depends_on:
+            - db
+            - redis
+    queue:
+        image: v2board-php
+        command: ["php", "artisan", "-vvv", "horizon"]
+        volumes:
+            - ..:/app
+        depends_on:
+            - db
+            - redis
+    schedule:
+        image: v2board-php
+        command: ["cron", "-f"]
+        volumes:
+            - ..:/app
+        depends_on:
+            - db
+            - redis
+    db:
+        image: mysql
+        volumes:
+            - ./mysql:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=12345
+            - MYSQL_DATABASE=v2board
+            - MYSQL_USER=dev
+            - MYSQL_PASSWORD=12345
+    redis:
+        image: redis:alpine
+        volumes:
+            - ./redis:/data
+    phpmyadmin:
+        image: phpmyadmin:apache
+        ports:
+            - 8081:80
+        depends_on:
+            - db

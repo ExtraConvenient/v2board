@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+
+FROM php:7.4-fpm
+
+# setup PHP
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+RUN apt-get update && apt-get install -y \
+	zip unzip git cron
+
+# install extensions
+RUN pecl install redis \
+	&& docker-php-ext-enable redis
+	
+RUN docker-php-ext-install pcntl pdo_mysql	
+
+# copy cron files (cron must be started manually)
+COPY ./schedule-cron /etc/cron.d/schedule-cron
+RUN chmod 0644 /etc/cron.d/schedule-cron
+RUN crontab /etc/cron.d/schedule-cron
+
+WORKDIR /app
+# CMD ["php-fpm"]
